@@ -14,7 +14,7 @@ import webbrowser
 
 ''' TODO: add in optional start and end parameters to make it one-way trip '''
 
-GOOGLE_MAPS_API_KEY = "API_KEY"
+GOOGLE_MAPS_API_KEY = "API KEY"
 waypoints_file = "my-waypoints-dist-dur.tsv"
 
 #This is the general filename - as shorter routes are discovered the Population fitness score will be inserted into the filename
@@ -182,7 +182,7 @@ def shuffle_mutation(agent_genome):
     genome_subset = agent_genome[start_index:start_index + length]
     agent_genome = agent_genome[:start_index] + agent_genome[start_index + length:]
     
-    insert_index = random.randint(1, len(agent_genome) + len(genome_subset) - 2)
+    insert_index = random.randint(1, len(agent_genome) + len(genome_subset) - 3)
     agent_genome = agent_genome[:insert_index] + genome_subset + agent_genome[insert_index:]
     return tuple(agent_genome)
 
