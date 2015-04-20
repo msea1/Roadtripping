@@ -14,7 +14,7 @@ import webbrowser
 
 ''' TODO: add in optional start and end parameters to make it one-way trip '''
 
-GOOGLE_MAPS_API_KEY = "API KEY"
+GOOGLE_MAPS_API_KEY = "API_KEY"
 waypoints_file = "my-waypoints-dist-dur.tsv"
 
 #This is the general filename - as shorter routes are discovered the Population fitness score will be inserted into the filename
