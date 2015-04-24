@@ -39,25 +39,6 @@ mid_points = ["Kohm Yah-mah-nee Visitor Center, 21820 Lassen National Park Hwy, 
                 "Furnace Creek Inn, 328 Greenland Blvd., Death Valley, CA 92328"
 ]
 
-four_waypoints = ["Zion National Park Lodge, Zion Canyon Scenic Drive, Springdale, UT",
-                "Bryce Canyon National Park Visitor Center, Bryce, UT",
-                "Las Vegas, NV",
-                "Canyon de Chelly National Monument, Chinle, AZ",
-                "Canyonlands National Park Headquaters, Resource Boulevard, Moab, UT",
-                "Arches National Park Visitor Center & Park Headquarters, Arches Entrance Road, Moab, UT"
-]
-
-ca_waypoints = ["Thomas H. Kuchel Visitor Center, U.S. 101, Orick, CA",
-                "Kohm Yah-mah-nee Visitor Center, 21820 Lassen National Park Hwy, Mineral, CA 96063, United States,",
-                "Tahoe City, CA",
-                "Historic Mono Inn, 55620 US-395, Lee Vining, CA 93541, United States",
-                "Yosemite Valley Visitor Center, 9035 Village Dr, Yosemite National Park, CA 95389",
-                "Cedar Grove Visitor Center, North Side Drive, Kings Canyon National Park, CA 93633",
-                "Lodgepole Visitor Center, 63100 Lodgepole Road, Sequoia National Park, CA 93262",
-                "Manzanar, Manzanar Reward Rd, California",
-                "Furnace Creek Inn, 328 Greenland Blvd., Death Valley, CA 92328",
-                "Las Vegas, NV"
-]
 
 def CreateOptimalRouteHtmlFile(optimal_route, distance, display=1):
     optimal_route = list(optimal_route)
