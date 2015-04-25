@@ -12,9 +12,9 @@ import os.path
 import random
 import webbrowser
 
-''' TODO: add in optional start and end parameters to make it one-way trip '''
+''' TODO: if waypoints exist, load those and look for new ones missing to cut down on API calls '''
 
-GOOGLE_MAPS_API_KEY = "API_KEY"
+
 waypoints_file = "my-waypoints-dist-dur.tsv"
 
 #This is the general filename - as shorter routes are discovered the Population fitness score will be inserted into the filename
@@ -23,26 +23,65 @@ waypoints_file = "my-waypoints-dist-dur.tsv"
 output_file = 'Output.html'
 
 #parameters for the Genetic algoritim
-thisRunGenerations=5000
-thisRunPopulation_size=100
+thisRunGenerations=25000
+thisRunPopulation_size=500
 
 
-start_point = "Thomas H. Kuchel Visitor Center, U.S. 101, Orick, CA";
-end_point = "Las Vegas, NV";
-mid_points = ["Kohm Yah-mah-nee Visitor Center, 21820 Lassen National Park Hwy, Mineral, CA 96063, United States,",
-                "Tahoe City, CA",
-                "Historic Mono Inn, 55620 US-395, Lee Vining, CA 93541, United States",
-                "Yosemite Valley Visitor Center, 9035 Village Dr, Yosemite National Park, CA 95389",
-                "Cedar Grove Visitor Center, North Side Drive, Kings Canyon National Park, CA 93633",
-                "Lodgepole Visitor Center, 63100 Lodgepole Road, Sequoia National Park, CA 93262",
-                "Manzanar, Manzanar Reward Rd, California",
-                "Furnace Creek Inn, 328 Greenland Blvd., Death Valley, CA 92328"
+start_point = "Las Vegas, NV";
+end_point = "Spokane, WA";
+mid_points = ["Flagstaff, AZ",
+                "Page, AZ",
+                "Teasdale, UT",
+                "Arches National Park Visitor Center & Park Headquarters, Arches Entrance Road, Utah",
+                "Bryce Canyon National Park Visitor Center, Bryce, UT",
+                "Natural Bridges Rd, Lake Powell, UT 84533",
+                "Oljato-Monument Valley, UT",
+                "Silverton, CO",
+                "Chambers, AZ",
+                "Chimayo, NM",
+                "Albuquerque, NM",
+                "Las Cruces, NM",
+                "Carlsbad, NM",
+                "Terlingua, TX",
+                "San Antonio, TX",
+                "Dallas, TX",
+                "Tulsa, OK",
+                "Memphis, TN",
+                "Atlanta, GA",
+                "Lafayette, LA",
+                "New Orleans, LA",
+                "Savannah, GA",
+                "Charleston, SC",
+                "Linville, NC",
+                "Asheville, NC",
+                "Richmond, VA",
+                "Museum of the Cherokee Indian, 589 Tsali Boulevard, Cherokee, NC 28719",
+                "Dollywood, 2700 Dollywood Parks Boulevard, Pigeon Forge, TN 37863",
+                "Nashville, TN",
+                "Chattanooga, TN",
+                "Kansas City, MO",
+                "Omaha, NE"
+                "Rapid City, SD",
+                "Yellowstone National Park Visitor Center",
+                "Mitchell Corn Palace, 604 North Main Street, Mitchell, SD 57301",
+                "Little Rock, AR",
+                "Indianola, MS",
+                "Tupelo, MS",
+                "Chinle, AZ",
+                "Fajada Butte View Point, Nageezi, NM 87037",
+                "Great Sand Dunes Visitor Center, Mosca, CO",
+                "Black Canyon of the Gunnison National Park, Montrose, CO",
+                "Co Road 7515, Bloomfield, NM 87413",
+                "Chapin Mesa Archeological Museum, Mesa Verde National Park, CO",
+                "C R 268A, Montezuma Creek, UT 84534",
+                "Zion Lodge, 1 Zion Canyon Scenic Drive, Springdale, UT 84767",
+                "Grand Canyon National Park",
 ]
 
 
 def CreateOptimalRouteHtmlFile(optimal_route, distance, display=1):
     optimal_route = list(optimal_route)
-    optimal_route += [optimal_route[0]]
+    #optimal_route += [optimal_route[0]]
 
 
     Page_1 = '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="initial-scale=1.0, user-scalable=no"><meta name="description" content="Randy Olson uses machine learning to find the optimal road trip across the U.S."><meta name="author" content="Randal S. Olson"><title>The optimal road trip across the U.S. according to machine learning</title><style>html, body, #map-canvas {height: 100%;margin: 0px;padding: 0px}#panel {position: absolute;top: 5px;left: 50%;margin-left: -180px;z-index: 5;background-color: #fff;padding: 10px;border: 1px solid #999;}</style><script src="https://maps.googleapis.com/maps/api/js?v=3.exp&signed_in=true"></script><script>var directionsDisplay1, directionsDisplay2;var directionsDisplay3, directionsDisplay4;var directionsDisplay5, directionsDisplay6;var markerOptions = {icon: "http://maps.gstatic.com/mapfiles/markers2/marker.png"};var directionsDisplayOptions = {preserveViewport: true,markerOptions: markerOptions};var directionsService = new google.maps.DirectionsService();var map;function initialize() {var center = new google.maps.LatLng(39, -96);var mapOptions = {zoom: 5,center: center};'
@@ -97,26 +136,19 @@ def CreateOptimalRouteHtmlFile(optimal_route, distance, display=1):
 
 
 def compute_fitness(solution):
-    """
-        This function returns the total distance traveled on the current road trip.
-        
-        The genetic algorithm will favor road trips that have shorter
-        total distances traveled.
-    """
+    """ returns the total duration traveled on the current road trip."""
 
     solution_fitness = 0.0
     for index in range(len(solution)-1): # making it one-way
         waypoint1 = solution[index]
         waypoint2 = solution[index+1]
-        solution_fitness += waypoint_distances[frozenset([waypoint1, waypoint2])]
+        #solution_fitness += waypoint_distances[frozenset([waypoint1, waypoint2])]
+        solution_fitness += waypoint_durations[frozenset([waypoint1, waypoint2])]
         
     return solution_fitness
 
 def generate_random_agent():
-    """
-        Creates a random road trip from the waypoints.
-    """
-    
+    """ Creates a random road trip from the waypoints. """ 
     new_random_agent = list(mid_points)
     random.shuffle(new_random_agent)
     new_random_agent.insert(0, start_point)
@@ -139,7 +171,6 @@ def mutate_agent(agent_genome, max_mutations=3):
 
         while swap_index1 == swap_index2:
             swap_index2 = random.randint(1, len(agent_genome) - 2)
-
         agent_genome[swap_index1], agent_genome[swap_index2] = agent_genome[swap_index2], agent_genome[swap_index1]
             
     return tuple(agent_genome)
@@ -151,20 +182,20 @@ def shuffle_mutation(agent_genome):
         A shuffle mutation takes a random sub-section of the road trip
         and moves it to another location in the road trip.
     """
-    
     agent_genome = list(agent_genome)
-    max_length = 0
-    while (max_length < 2):    
-        start_index = random.randint(1, len(agent_genome) - 3) # protect first and last stops & allow 2 spots for shuffle
-        max_length = len(agent_genome)-start_index-2;
+    agent_genome = agent_genome[1:len(agent_genome)-1]
     
-    length = random.randint(2, max_length)
+    start_index = random.randint(0, len(agent_genome) - 1)
+    length = random.randint(2, 20)
     
     genome_subset = agent_genome[start_index:start_index + length]
     agent_genome = agent_genome[:start_index] + agent_genome[start_index + length:]
     
-    insert_index = random.randint(1, len(agent_genome) + len(genome_subset) - 3)
+    insert_index = random.randint(0, len(agent_genome) + len(genome_subset) - 1)
     agent_genome = agent_genome[:insert_index] + genome_subset + agent_genome[insert_index:]
+
+    agent_genome.insert(0, start_point)
+    agent_genome.append(end_point)
     return tuple(agent_genome)
 
 def generate_random_population(pop_size):
@@ -200,18 +231,13 @@ def run_genetic_algorithm(generations=5000, population_size=100):
         # Take the 10 shortest road trips and produce 10 offspring each from them
         new_population = []
         for rank, agent_genome in enumerate(sorted(population_fitness, key=population_fitness.get)[:10]):
-            if (generation % 1000 == 0 or generation == generations - 1) and rank == 0:
+            if (generation == generations - 1 and rank == 0):
                 current_best_genome = agent_genome
                 print("Generation %d best: %d | Unique genomes: %d" % (generation,
                                                                        population_fitness[agent_genome],
                                                                        len(population_fitness)))
                 print(agent_genome)                
                 print("")
-
-                #if this is the first route found, or it is shorter than the best route we know, create a html output and display it
-                if population_fitness[agent_genome] < current_best_distance or current_best_distance < 0:
-                    current_best_distance = population_fitness[agent_genome]
-                    CreateOptimalRouteHtmlFile(agent_genome,current_best_distance, 1)
                     
 
             # Create 1 exact copy of each of the top 10 road trips
@@ -254,13 +280,14 @@ if os.path.exists(file_path):
 else:
     #file does not exist - compute results       
     print "Collecting Waypoints"
+    import pdb
     waypoint_distances = {}
     waypoint_durations = {}
-    all_waypoints = []
-    all_waypoints.append(mid_points)
+    all_waypoints = [] + mid_points
     all_waypoints.append(start_point)
     all_waypoints.append(end_point)
 
+    #pdb.set_trace()
     gmaps = googlemaps.Client(GOOGLE_MAPS_API_KEY)
     for (waypoint1, waypoint2) in combinations(all_waypoints, 2):
         try:
@@ -282,6 +309,7 @@ else:
     
         except Exception as e:
             print("Error with finding the route between %s and %s." % (waypoint1, waypoint2))
+            print(e)
     
     print "Saving Waypoints"
     with open(waypoints_file, "wb") as out_file:
@@ -297,8 +325,6 @@ else:
                                       str(waypoint_distances[frozenset([waypoint1, waypoint2])]),
                                       str(waypoint_durations[frozenset([waypoint1, waypoint2])])]))
 
-
-#optimal_route = run_genetic_algorithm(generations=100, population_size=100)
 print "Search for optimal route"
 optimal_route = run_genetic_algorithm(generations=thisRunGenerations, population_size=thisRunPopulation_size)
 
