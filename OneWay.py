@@ -27,10 +27,26 @@ thisRunGenerations=25000
 thisRunPopulation_size=500
 
 
-start_point = "Las Vegas, NV";
-end_point = "Spokane, WA";
+start_point = "Seattle, WA";
+end_point = "Seattle, WA";
 mid_points = ["Flagstaff, AZ",
                 "Page, AZ",
+                "Olympia, WA",
+                "Spokane, WA",
+                "Thomas H. Kuchel Visitor Center, U.S. 101, Orick, CA",
+                "Kohm Yah-mah-nee Visitor Center, 21820 Lassen National Park Hwy, Mineral, CA 96063, United States,",
+                "Tahoe City, CA",
+                "Historic Mono Inn, 55620 US-395, Lee Vining, CA 93541, United States",
+                "Yosemite Valley Visitor Center, 9035 Village Dr, Yosemite National Park, CA 95389",
+                "Cedar Grove Visitor Center, North Side Drive, Kings Canyon National Park, CA 93633",
+                "Lodgepole Visitor Center, 63100 Lodgepole Road, Sequoia National Park, CA 93262",
+                "Manzanar, Manzanar Reward Rd, California",
+                "Furnace Creek Inn, 328 Greenland Blvd., Death Valley, CA 92328",
+                "Las Vegas, NV",
+                "Yakima, WA",
+                "Glacier National Park",
+                "Tillamook, OR",
+                "Bandon, OR",
                 "Teasdale, UT",
                 "Arches National Park Visitor Center & Park Headquarters, Arches Entrance Road, Utah",
                 "Bryce Canyon National Park Visitor Center, Bryce, UT",
@@ -40,15 +56,21 @@ mid_points = ["Flagstaff, AZ",
                 "Chambers, AZ",
                 "Chimayo, NM",
                 "Albuquerque, NM",
+                "Austin, TX",
+                "Charlottesville, VA",
                 "Las Cruces, NM",
+                "Vicksburg, MS",
                 "Carlsbad, NM",
                 "Terlingua, TX",
+                "Lincoln, NE",
                 "San Antonio, TX",
                 "Dallas, TX",
                 "Tulsa, OK",
                 "Memphis, TN",
                 "Atlanta, GA",
                 "Lafayette, LA",
+                "St. Louis, MO",
+                "Oklahoma City, OK",
                 "New Orleans, LA",
                 "Savannah, GA",
                 "Charleston, SC",
@@ -60,7 +82,7 @@ mid_points = ["Flagstaff, AZ",
                 "Nashville, TN",
                 "Chattanooga, TN",
                 "Kansas City, MO",
-                "Omaha, NE"
+                "Omaha, NE",
                 "Rapid City, SD",
                 "Yellowstone National Park Visitor Center",
                 "Mitchell Corn Palace, 604 North Main Street, Mitchell, SD 57301",
@@ -75,7 +97,7 @@ mid_points = ["Flagstaff, AZ",
                 "Chapin Mesa Archeological Museum, Mesa Verde National Park, CO",
                 "C R 268A, Montezuma Creek, UT 84534",
                 "Zion Lodge, 1 Zion Canyon Scenic Drive, Springdale, UT 84767",
-                "Grand Canyon National Park",
+                "Grand Canyon National Park"
 ]
 
 
@@ -259,76 +281,56 @@ def run_genetic_algorithm(generations=5000, population_size=100):
     return current_best_genome
 
 
-
+waypoint_distances = {}
+waypoint_durations = {}
+list_of_points = [] + mid_points
+list_of_points.append(start_point)
+list_of_points.append(end_point)
+all_waypoints = set()
+import pdb
+for (waypoint1, waypoint2) in combinations(list_of_points, 2):
+    tempKey = waypoint1 + '~' + waypoint2
+    all_waypoints.add(tempKey)
+    
 # if this file exists, read the data stored in it - if not then collect data by asking google
 print "Begin finding shortest route"
 file_path = waypoints_file
 if os.path.exists(file_path):
-    print "Waypoints exist"
-    #file exists used saved results
-    waypoint_distances = {}
-    waypoint_durations = {}
-    all_waypoints = set()
-
     waypoint_data = pd.read_csv(file_path, sep="\t")
-
     for i, row in waypoint_data.iterrows():
         waypoint_distances[frozenset([row.waypoint1, row.waypoint2])] = row.distance_m
         waypoint_durations[frozenset([row.waypoint1, row.waypoint2])] = row.duration_s
-        all_waypoints.update([row.waypoint1, row.waypoint2])
-
-else:
-    #file does not exist - compute results       
-    print "Collecting Waypoints"
-    import pdb
-    waypoint_distances = {}
-    waypoint_durations = {}
-    all_waypoints = [] + mid_points
-    all_waypoints.append(start_point)
-    all_waypoints.append(end_point)
-
-    #pdb.set_trace()
-    gmaps = googlemaps.Client(GOOGLE_MAPS_API_KEY)
-    for (waypoint1, waypoint2) in combinations(all_waypoints, 2):
+        tempKey = row.waypoint1 + '~' + row.waypoint2
+        if tempKey in all_waypoints:
+            all_waypoints.discard(tempKey)
+        else: 
+            tempKey = row.waypoint2 + '~' + row.waypoint1
+            all_waypoints.discard(tempKey)
+   
+print "Collecting Info on Missing Waypoints"
+gmaps = googlemaps.Client(GOOGLE_MAPS_API_KEY)
+with open(waypoints_file, "a") as out_file:
+    for path in all_waypoints:
+        (waypoint1, waypoint2) = path.split('~')
         try:
             route = gmaps.distance_matrix(origins=[waypoint1],
                                           destinations=[waypoint2],
-                                          mode="driving", # Change to "walking" for walking directions,
-                                                          # "bicycling" for biking directions, etc.
+                                          mode="driving", # or "walking" or "bicycling", etc.
                                           language="English",
                                           units="metric")
 
-            # "distance" is in meters
-            distance = route["rows"][0]["elements"][0]["distance"]["value"]
-
-            # "duration" is in seconds
-            duration = route["rows"][0]["elements"][0]["duration"]["value"]
+            distance = route["rows"][0]["elements"][0]["distance"]["value"] # in meters
+            duration = route["rows"][0]["elements"][0]["duration"]["value"] #in seconds
 
             waypoint_distances[frozenset([waypoint1, waypoint2])] = distance
             waypoint_durations[frozenset([waypoint1, waypoint2])] = duration
-    
+
+            out_file.write("\n" + "\t".join( [waypoint1, waypoint2, str(distance), str(duration)] ))
+
         except Exception as e:
             print("Error with finding the route between %s and %s." % (waypoint1, waypoint2))
             print(e)
-    
-    print "Saving Waypoints"
-    with open(waypoints_file, "wb") as out_file:
-        out_file.write("\t".join(["waypoint1",
-                                  "waypoint2",
-                                  "distance_m",
-                                  "duration_s"]))
-    
-        for (waypoint1, waypoint2) in waypoint_distances.keys():
-            out_file.write("\n" +
-                           "\t".join([waypoint1,
-                                      waypoint2,
-                                      str(waypoint_distances[frozenset([waypoint1, waypoint2])]),
-                                      str(waypoint_durations[frozenset([waypoint1, waypoint2])])]))
 
 print "Search for optimal route"
 optimal_route = run_genetic_algorithm(generations=thisRunGenerations, population_size=thisRunPopulation_size)
-
-#this is probably redundant now that the files are created in run_genetic_algorithm but leaving it active to ensure 
-#the final result is not lost
 CreateOptimalRouteHtmlFile(optimal_route, 1)
-
