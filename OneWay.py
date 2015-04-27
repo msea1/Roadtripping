@@ -1,35 +1,39 @@
-"""
-Randy Olson's Shortest Route Program modified By Andrew Liesinger to:
-    1: Detect waypoints file at runtime - if found use it, otherwise look up distances via google calls (and then save to waypoint file)
-    2: Dynamically create and open an HTML file showing the route when a shorter route is found
-    3: Make it easier to tinker with the Generation / Population parameters
-"""
+__author__ = "matthewc"
+
+''' Randy Olson's Shortest Route Program modified By Andrew Liesinger modified by Matthew Carruth'''
+
 from itertools import combinations
 import googlemaps
-import pandas as pd
+import json
 import numpy as np
 import os.path
+import pandas as pd
 import random
 import webbrowser
 
-''' TODO: if waypoints exist, load those and look for new ones missing to cut down on API calls '''
+CONFIG_FILE = "roadtripping_config.json"
+WAYPOINTS_FILE = "my-waypoints-dist-dur.tsv"
+OUTPUT_FILE = "Output.html"
+GOOGLE_MAPS_API_KEY = "API_GOES_HERE"
+
+def get_api_key():
+    with open(CONFIG_FILE) as data_file:    
+        data = json.load(data_file)
+        return data["GOOGLE_MAPS_API_KEY"]
 
 
-waypoints_file = "my-waypoints-dist-dur.tsv"
+''' TODO: optional threshold to pass to beat '''
 
-#This is the general filename - as shorter routes are discovered the Population fitness score will be inserted into the filename
-#so that interim results are saved for comparision.  The actual filenames using the default below will be:
-#Output_<Population Fitness Score>.html 
-output_file = 'Output.html'
 
 #parameters for the Genetic algoritim
-thisRunGenerations=25000
-thisRunPopulation_size=500
+thisRunGenerations=50000
+thisRunPopulation_size=1000
 
 
 start_point = "Seattle, WA";
 end_point = "Seattle, WA";
-mid_points = ["Flagstaff, AZ",
+mid_points = [
+                "Flagstaff, AZ",
                 "Page, AZ",
                 "Olympia, WA",
                 "Spokane, WA",
@@ -140,8 +144,8 @@ def CreateOptimalRouteHtmlFile(optimal_route, distance, display=1):
 
 
     #write the output to file    
-    localoutput_file = output_file.replace('.html', '_' + str(distance) + '.html')
-    fs = open(localoutput_file, 'w')
+    localOUTPUT_FILE = OUTPUT_FILE.replace('.html', '_' + str(distance) + '.html')
+    fs = open(localOUTPUT_FILE, 'w')
     fs.write(Page_1)
     fs.write(Page_2)
     fs.write(StatementC1)
@@ -154,7 +158,7 @@ def CreateOptimalRouteHtmlFile(optimal_route, distance, display=1):
     
     #Show the result
     if display ==1:
-        webbrowser.open_new_tab(localoutput_file)
+        webbrowser.open_new_tab(localOUTPUT_FILE)
 
 
 def compute_fitness(solution):
@@ -287,14 +291,13 @@ list_of_points = [] + mid_points
 list_of_points.append(start_point)
 list_of_points.append(end_point)
 all_waypoints = set()
-import pdb
 for (waypoint1, waypoint2) in combinations(list_of_points, 2):
     tempKey = waypoint1 + '~' + waypoint2
     all_waypoints.add(tempKey)
     
 # if this file exists, read the data stored in it - if not then collect data by asking google
 print "Begin finding shortest route"
-file_path = waypoints_file
+file_path = WAYPOINTS_FILE
 if os.path.exists(file_path):
     waypoint_data = pd.read_csv(file_path, sep="\t")
     for i, row in waypoint_data.iterrows():
@@ -308,8 +311,9 @@ if os.path.exists(file_path):
             all_waypoints.discard(tempKey)
    
 print "Collecting Info on Missing Waypoints"
+GOOGLE_MAPS_API_KEY = get_api_key()
 gmaps = googlemaps.Client(GOOGLE_MAPS_API_KEY)
-with open(waypoints_file, "a") as out_file:
+with open(WAYPOINTS_FILE, "a") as out_file:
     for path in all_waypoints:
         (waypoint1, waypoint2) = path.split('~')
         try:
